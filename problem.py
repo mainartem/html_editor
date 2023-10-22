@@ -1,48 +1,136 @@
 import sys
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import QPoint
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QBrush
-from PyQt5.QtWidgets import QMainWindow, QGraphicsScene, QToolBar, QMenu, QAction, QGraphicsView, QApplication
+from PyQt5.QtWidgets import QApplication, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from PyQt5.QtGui import QIcon
 
-
-class GraphWindow(QMainWindow):
+class MainWindow(QWidget):
     def __init__(self):
-        super().__init__()
-        self.scene = QGraphicsScene()
+        super(MainWindow, self).__init__()
+        self.layout  = QVBoxLayout()
+        self.layout.addWidget(MyBar(self))
+        self.layout.addStretch(-1)
+        self.setLayout(self.layout)
+        self.layout.setContentsMargins(0,0,0,0)
+        self.layout.addStretch(-1)
+        self.setFixedSize(800,400)
+        self.setWindowFlags(Qt.FramelessWindowHint)
 
-        # a grid foreground
-        self.scene.setBackgroundBrush(QBrush(Qt.lightGray, Qt.CrossPattern))
-        self.grid = True
+        self.label = QLabel(self)
+        self.pixmap = QPixmap('image/logo.png')
+        self.label.setPixmap(self.pixmap)
+        self.label.resize(
+            self.pixmap.width(),
+            self.pixmap.height()
+        )
 
-        # Create upper toolbar with menu options
-        tb = QToolBar()
-        menu = QMenu()
-        db_action = QAction("Open file")
-        db_action.setStatusTip("Select a file to use as a database")
-        db_action.triggered.connect(self.open_new_db)
-        menu.addAction(db_action)
 
-        tb.addWidget(menu)
-        tb.setAllowedAreas(Qt.TopToolBarArea)
-        tb.setFloatable(False)
-        tb.setMovable(False)
-        self.addToolBar(tb)
+class ImageButtonRed(QPushButton):
+    def __init__(self, *args, **kwargs):
+        super(ImageButtonRed, self).__init__(*args, **kwargs)
+        #self.setIconSize(self.size())
+        self.setIcon(QIcon("image/Red.png"))
+        self.setStyleSheet("QPushButton { background-color: black; color: white; }")
 
-        self.statusBar().showMessage("Ready")
+    def enterEvent(self, event):
+        self.setIcon(QIcon("image/Red_wer.png"))
 
-        # Demonstrate the results from the input.
+    def leaveEvent(self, event):
+        self.setIcon(QIcon("image/Red.png"))
 
-        graphics = QGraphicsView(self.scene)
-        self.setCentralWidget(graphics)
-        self.showFullScreen()
 
-    def open_new_db(self):
-        pass
+class ImageButtonYellow(QPushButton):
+    def __init__(self, *args, **kwargs):
+        super(ImageButtonYellow, self).__init__(*args, **kwargs)
 
-    def keyPressEvent(self, e):
-        # Currently, we respond to a press of the Escape key by closing the program.
-        if e.key() == Qt.Key_Escape:
-            self.close()
+        #self.setIconSize(self.size())
+        self.setIcon(QIcon("image/Yellow.png"))
+        self.setStyleSheet("QPushButton { background-color: black; color: white; }")
 
-app = QApplication(sys.argv)
-gr = GraphWindow()
-sys.exit(app.exec_())
+    def enterEvent(self, event):
+        self.setIcon(QIcon("image/Yellow_wer.png"))
+
+    def leaveEvent(self, event):
+        self.setIcon(QIcon("image/Yellow.png"))
+
+
+class ImageButtonGreen(QPushButton):
+    def __init__(self, *args, **kwargs):
+        super(ImageButtonGreen, self).__init__(*args, **kwargs)
+        #self.setIconSize(self.size())
+        self.setIcon(QIcon("image/Green.png"))
+        self.setStyleSheet("QPushButton { background-color: black; color: white; }")
+
+    def enterEvent(self, event):
+        self.setIcon(QIcon("image/Green_wer.png"))
+
+    def leaveEvent(self, event):
+        self.setIcon(QIcon("image/Green.png"))
+
+
+class MyBar(QWidget):
+    def __init__(self, parent):
+        super(MyBar, self).__init__()
+        self.setWindowIcon(QIcon("image/logo.png"))
+
+        self.parent = parent
+        self.layout = QHBoxLayout()
+        self.layout.setContentsMargins(0,0,0,0)
+        self.title = QLabel("My Own Bar")
+        self.title.setFixedHeight(35)
+        self.title.setAlignment(Qt.AlignCenter)
+        self.layout.addWidget(self.title)
+
+        self.title.setStyleSheet("""
+            background-color: black;
+            color: white;
+        """)
+
+        # Добавляем кнопки закрытия, сворачивания и развертывания
+        self.close_button = ImageButtonRed()
+        self.close_button.clicked.connect(self.parent.close)
+        self.layout.addWidget(self.close_button)
+
+        self.minimize_button = ImageButtonYellow()
+        self.minimize_button.clicked.connect(self.parent.showMinimized)
+        self.layout.addWidget(self.minimize_button)
+
+        def showMaximizedClick():
+            if self.parent.windowState():
+                self.parent.showNormal()
+            else:
+                self.parent.showMaximized()
+
+        self.maximize_button = ImageButtonGreen()#.setIcon(QIcon("image/Green.png"))
+        self.maximize_button.clicked.connect(showMaximizedClick)
+        self.layout.addWidget(self.maximize_button)
+
+        self.setLayout(self.layout)
+
+        self.start = QPoint(0, 0)
+        self.pressing = False
+
+    def resizeEvent(self, QResizeEvent):
+        super(MyBar, self).resizeEvent(QResizeEvent)
+        self.title.setFixedWidth(self.parent.width())
+
+    def mousePressEvent(self, event):
+        self.start = self.mapToGlobal(event.pos())
+        self.pressing = True
+
+    def mouseMoveEvent(self, event):
+        if self.pressing:
+            self.end = self.mapToGlobal(event.pos())
+            self.movement = self.end-self.start
+            self.parent.move(self.mapToGlobal(self.movement))
+            self.start = self.end
+
+    def mouseReleaseEvent(self, QMouseEvent):
+        self.pressing = False
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    mw = MainWindow()
+    mw.show()
+    sys.exit(app.exec_())
